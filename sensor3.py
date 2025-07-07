@@ -12,9 +12,9 @@ from tempfile import TemporaryDirectory
 
 st.set_page_config(layout="wide")
 st.title("Penempatan Sensor dengan Dominating Set")
-st.sidebar.header("Pilih Jenis Sensor")
+st.sidebar.header("Pilih Lokasi Penempatan Sensor")
 
-sensor_mode = st.sidebar.radio("Jenis Sensor", ["Sensor di Laut", "Sensor di Darat"])
+sensor_mode = st.sidebar.radio("Lokasi Sensor", ["Sensor di Laut", "Sensor di Darat"])
 grid_spacing = st.sidebar.number_input("Ukuran Grid (derajat)", 0.01, 1.0, 0.1)
 
 # === Parameter Radius Sensor ===
@@ -85,8 +85,8 @@ sensors = []
 
 # === SENSOR DARAT ===
 if sensor_mode == "Sensor di Darat":
-    batas_file = st.sidebar.file_uploader("Unggah Batas Wilayah (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
-    darat_file = st.sidebar.file_uploader("Unggah Wilayah Darat (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
+    batas_file = st.sidebar.file_uploader("Unggah Batas Wilayah (GeoJSON / Shapefile dalam ZIP)", type=["geojson", "json", "zip"])
+    darat_file = st.sidebar.file_uploader("Unggah Wilayah Darat (GeoJSON / Shapefile dalam ZIP)", type=["geojson", "json", "zip"])
     sensor_file = st.sidebar.file_uploader("Sensor Eksisting (CSV, opsional)", type="csv")
 
     if batas_file and darat_file:
