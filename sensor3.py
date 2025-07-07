@@ -20,7 +20,7 @@ grid_spacing = st.sidebar.number_input("Ukuran Grid (derajat)", 0.01, 1.0, 0.1)
 # === Parameter Radius Sensor ===
 if sensor_mode == "Sensor di Laut":
     radius_val = st.sidebar.number_input("Jangkauan Sensor (nautical miles)", 1, 300, 50)
-    min_distance_val = st.sidebar.number_input("Jarak Minimum antar Sensor (nautical miles)", 1, 300, 10)
+    min_distance_val = st.sidebar.number_input("Jarak Minimum antar Sensor (nautical miles)", 1, 300, 25)
     radius_deg = radius_val / 60
     min_distance_deg = min_distance_val / 60
     satuan_jarak = "nautical miles"
@@ -28,7 +28,7 @@ if sensor_mode == "Sensor di Laut":
     min_distance_km = round(min_distance_val * 1.852, 1)
 else:
     radius_val = st.sidebar.number_input("Jangkauan Sensor (km)", 1, 500, 50)
-    min_distance_val = st.sidebar.number_input("Jarak Minimum antar Sensor (km)", 1, 500, 10)
+    min_distance_val = st.sidebar.number_input("Jarak Minimum antar Sensor (km)", 1, 500, 25)
     radius_deg = radius_val / 111
     min_distance_deg = min_distance_val / 111
     satuan_jarak = "km"
