@@ -4,3 +4,5 @@ pandas
 folium
 shapely
 scipy
+streamlit_folium
+numpy
