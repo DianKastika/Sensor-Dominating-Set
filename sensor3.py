@@ -36,9 +36,6 @@ else:
     radius_km = radius_val
     min_distance_km = min_distance_val
 
-# =======================
-# === Fungsi Pendukung ===
-# =======================
 def load_vector_file(uploaded_file):
     if uploaded_file is None:
         return None
@@ -82,9 +79,6 @@ def generate_grid_points(minx, miny, maxx, maxy, spacing):
     ys = np.arange(miny, maxy, spacing)
     return gpd.GeoDataFrame(geometry=[Point(x, y) for x in xs for y in ys], crs="EPSG:4326")
 
-# ================================
-# === Input & Persiapan Data ====
-# ================================
 intersection_points = []
 sensors = []
 
@@ -119,9 +113,6 @@ elif sensor_mode == "Sensor di Laut":
             intersection_points = list(grid.geometry)
             sensors = load_csv_sensors(sensor_file)
 
-# ================================
-# === Proses Dominating Set  ====
-# ================================
 if intersection_points:
     coords = np.array([[p.x, p.y] for p in intersection_points])
     tree = cKDTree(coords)
@@ -136,13 +127,11 @@ if intersection_points:
     remaining_coords = coords[remaining_idx]
     selected_sensors = sensors.copy()
 
-    max_iter = 1000
-    for _ in range(max_iter):
-        if len(remaining_idx) == 0:
-            break
+    while len(remaining_idx) > 0:
         tree_remain = cKDTree(remaining_coords)
         counts = tree_remain.query_ball_point(remaining_coords, r=radius_deg, return_length=True)
         sorted_idx = np.argsort(-np.array(counts))
+        placed = False
         for idx in sorted_idx:
             candidate = Point(remaining_coords[idx])
             if all(candidate.distance(p) >= min_distance_deg for p in selected_sensors):
@@ -155,11 +144,12 @@ if intersection_points:
                     coverage[i] += 1
                 remaining_idx = np.where(coverage == 0)[0]
                 remaining_coords = coords[remaining_idx]
+                placed = True
                 break
+        if not placed:
+            st.warning("⚠️ Tidak bisa menambahkan sensor baru dengan jarak minimum yang ditetapkan. Beberapa titik mungkin tidak terjangkau.")
+            break
 
-    # ================================
-    # === Visualisasi & Unduhan  ====
-    # ================================
     m = folium.Map(location=[-2.5, 118], zoom_start=5)
 
     for pt in sensors:
@@ -194,5 +184,6 @@ if intersection_points:
     st.download_button("📥 Unduh CSV Titik Sensor", data=df_result.to_csv(index=False).encode(), file_name="sensor_output.csv", mime="text/csv")
     html = m.get_root().render()
     st.download_button("🌐 Unduh Peta Interaktif (HTML)", data=html.encode(), file_name="peta_sensor_interaktif.html", mime="text/html")
+
 else:
     st.info("⬅️ Silakan unggah file wilayah dan atur parameter untuk memulai.")
