@@ -12,7 +12,7 @@ from tempfile import TemporaryDirectory
 
 st.set_page_config(layout="wide")
 st.title("Penempatan Sensor dengan Dominating Set")
-st.caption("Aplikasi ini membantu menempatkan sensor keamanan laut/darat berdasarkan algoritma dominasi.")
+st.caption("Aplikasi ini dirancang untuk menentukan posisi optimal sensor laut/darat dengan menggunakan konsep himpunan dominasi pada teori graf.")
 st.sidebar.header("Pilih Lokasi Penempatan Sensor")
 
 sensor_mode = st.sidebar.radio("Lokasi Sensor", ["Sensor di Laut", "Sensor di Darat"])
