@@ -109,8 +109,8 @@ if sensor_mode == "Sensor di Darat":
 
 # === SENSOR LAUT ===
 elif sensor_mode == "Sensor di Laut":
-    batas_file = st.sidebar.file_uploader("Unggah Batas Wilayah (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
-    garis_file = st.sidebar.file_uploader("Unggah Garis Pantai (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
+    batas_file = st.sidebar.file_uploader("Unggah Batas Wilayah (GeoJSON / Shapefile dalam ZIP)", type=["geojson", "json", "zip"])
+    garis_file = st.sidebar.file_uploader("Unggah Garis Pantai (GeoJSON / Shapefile dalam ZIP)", type=["geojson", "json", "zip"])
     sensor_file = st.sidebar.file_uploader("Sensor Eksisting (CSV, opsional)", type="csv")
 
     if batas_file and garis_file:
