@@ -10,6 +10,7 @@ from shapely.ops import unary_union
 from scipy.spatial import cKDTree
 from tempfile import TemporaryDirectory
 
+# ======================== CONFIGURASI STREAMLIT ========================
 st.set_page_config(layout="wide")
 st.title("Penempatan Sensor dengan Dominating Set")
 st.caption("Aplikasi ini menentukan posisi optimal sensor laut/darat menggunakan konsep himpunan dominasi dari teori graf.")
@@ -18,7 +19,7 @@ st.sidebar.header("📍 Pilihan Parameter")
 sensor_mode = st.sidebar.radio("Lokasi Penempatan", ["Sensor di Laut", "Sensor di Darat"])
 grid_spacing = st.sidebar.number_input("Ukuran Grid (derajat)", 0.01, 1.0, 0.1)
 
-# Parameter jangkauan sensor
+# ======================== PARAMETER JANGKAUAN ========================
 if sensor_mode == "Sensor di Laut":
     radius_val = st.sidebar.number_input("Jangkauan Sensor (nautical miles)", 1, 300, 50)
     min_distance_val = st.sidebar.number_input("Jarak Minimum antar Sensor (nautical miles)", 1, 300, 25)
@@ -36,6 +37,7 @@ else:
     radius_km = radius_val
     min_distance_km = min_distance_val
 
+# ======================== FUNGSI PEMBANTU ========================
 def load_vector_file(uploaded_file):
     if uploaded_file is None:
         return None
@@ -79,9 +81,11 @@ def generate_grid_points(minx, miny, maxx, maxy, spacing):
     ys = np.arange(miny, maxy, spacing)
     return gpd.GeoDataFrame(geometry=[Point(x, y) for x in xs for y in ys], crs="EPSG:4326")
 
+# ======================== INISIALISASI ========================
 intersection_points = []
 sensors = []
 
+# ======================== SENSOR DARAT ========================
 if sensor_mode == "Sensor di Darat":
     darat_file = st.sidebar.file_uploader("🗂️ Unggah Wilayah Darat (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
     sensor_file = st.sidebar.file_uploader("🛰️ Sensor Eksisting (CSV, opsional)", type="csv")
@@ -96,6 +100,7 @@ if sensor_mode == "Sensor di Darat":
             intersection_points = list(grid.geometry)
             sensors = load_csv_sensors(sensor_file)
 
+# ======================== SENSOR LAUT (REVISI CEPAT) ========================
 elif sensor_mode == "Sensor di Laut":
     batas_file = st.sidebar.file_uploader("🗺️ Unggah Batas Wilayah (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
     garis_file = st.sidebar.file_uploader("🌊 Unggah Garis Pantai (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
@@ -104,15 +109,28 @@ elif sensor_mode == "Sensor di Laut":
     if batas_file and garis_file:
         batas = load_vector_file(batas_file)
         garis = load_vector_file(garis_file)
+
         if batas is not None and garis is not None:
-            pantai_union = unary_union(garis.geometry)
             batas_union = unary_union(batas.geometry)
-            grid = generate_grid_points(*garis.total_bounds, grid_spacing)
-            grid = grid[grid.geometry.intersects(pantai_union)]
-            grid = grid[grid.geometry.within(batas_union)]
-            intersection_points = list(grid.geometry)
+            pantai_union = unary_union(garis.geometry)
+
+            minx, miny, maxx, maxy = batas.total_bounds
+            grid = generate_grid_points(minx, miny, maxx, maxy, grid_spacing)
+
+            points = [line.intersection(pantai_union) for line in grid.geometry if line.intersects(pantai_union)]
+            for geom in points:
+                if geom.is_empty:
+                    continue
+                elif geom.geom_type == 'Point' and geom.within(batas_union):
+                    intersection_points.append(geom)
+                elif geom.geom_type == 'MultiPoint':
+                    for pt in geom.geoms:
+                        if pt.within(batas_union):
+                            intersection_points.append(pt)
+
             sensors = load_csv_sensors(sensor_file)
 
+# ======================== PROSES DOMINASI ========================
 if intersection_points:
     coords = np.array([[p.x, p.y] for p in intersection_points])
     tree = cKDTree(coords)
@@ -150,6 +168,7 @@ if intersection_points:
             st.warning("⚠️ Tidak bisa menambahkan sensor baru dengan jarak minimum yang ditetapkan. Beberapa titik mungkin tidak terjangkau.")
             break
 
+    # ======================== VISUALISASI ========================
     m = folium.Map(location=[-2.5, 118], zoom_start=5)
 
     for pt in sensors:
@@ -184,6 +203,5 @@ if intersection_points:
     st.download_button("📥 Unduh CSV Titik Sensor", data=df_result.to_csv(index=False).encode(), file_name="sensor_output.csv", mime="text/csv")
     html = m.get_root().render()
     st.download_button("🌐 Unduh Peta Interaktif (HTML)", data=html.encode(), file_name="peta_sensor_interaktif.html", mime="text/html")
-
 else:
     st.info("⬅️ Silakan unggah file wilayah dan atur parameter untuk memulai.")
