@@ -13,8 +13,7 @@ from shapely.geometry import Point, LineString
 
 # ======================== CONFIG STREAMLIT ========================
 st.set_page_config(layout="wide")
-st.title("Penempatan Sensor dengan Menggunakan Konsep Jarak pada
-Graf")
+st.title("Penempatan Sensor dengan Menggunakan Konsep Jarak pada Graf")
 st.caption("Aplikasi ini menentukan posisi optimal sensor laut/darat menggunakan konsep jarak pada graf.")
 st.sidebar.header("📍 Pilihan Parameter")
 
