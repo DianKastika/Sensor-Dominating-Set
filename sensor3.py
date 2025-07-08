@@ -9,8 +9,9 @@ from streamlit_folium import st_folium
 from shapely.ops import unary_union
 from scipy.spatial import cKDTree
 from tempfile import TemporaryDirectory
+from shapely.geometry import Point, LineString
 
-# ======================== CONFIGURASI STREAMLIT ========================
+# ======================== CONFIG STREAMLIT ========================
 st.set_page_config(layout="wide")
 st.title("Penempatan Sensor dengan Dominating Set")
 st.caption("Aplikasi ini menentukan posisi optimal sensor laut/darat menggunakan konsep himpunan dominasi dari teori graf.")
@@ -100,9 +101,9 @@ if sensor_mode == "Sensor di Darat":
             intersection_points = list(grid.geometry)
             sensors = load_csv_sensors(sensor_file)
 
-# ======================== SENSOR LAUT (DIPERCEPAT) ========================
+# ======================== SENSOR LAUT (PERBAIKAN) ========================
 elif sensor_mode == "Sensor di Laut":
-    batas_file = st.sidebar.file_uploader("🗺️ Unggah Batas Wilayah (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
+    batas_file = st.sidebar.file_uploader("🗺️ Unggah Batas Wilayah Laut (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
     garis_file = st.sidebar.file_uploader("🌊 Unggah Garis Pantai (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
     sensor_file = st.sidebar.file_uploader("🛰️ Sensor Eksisting (CSV, opsional)", type="csv")
 
@@ -114,12 +115,27 @@ elif sensor_mode == "Sensor di Laut":
             batas_union = unary_union(batas.geometry)
             pantai_union = unary_union(garis.geometry)
 
-            minx, miny, maxx, maxy = batas.total_bounds
-            grid = generate_grid_points(minx, miny, maxx, maxy, grid_spacing)
+            # Gunakan pendekatan grid-garis (LineString)
+            def generate_grid_lines(minx, miny, maxx, maxy, spacing):
+                v_lines = [LineString([(x, miny), (x, maxy)]) for x in np.arange(minx, maxx + spacing, spacing)]
+                h_lines = [LineString([(minx, y), (maxx, y)]) for y in np.arange(miny, maxy + spacing, spacing)]
+                return gpd.GeoDataFrame(geometry=v_lines + h_lines, crs="EPSG:4326")
 
-            # 🔄 Filter cepat: titik grid dalam batas dan memotong pantai
-            grid = grid[grid.geometry.within(batas_union) & grid.geometry.intersects(pantai_union)]
-            intersection_points = list(grid.geometry)
+            minx, miny, maxx, maxy = batas.total_bounds
+            grid_lines = generate_grid_lines(minx, miny, maxx, maxy, grid_spacing)
+
+            # Interseksi grid dengan garis pantai
+            for line in grid_lines.geometry:
+                if line.intersects(pantai_union):
+                    geom = line.intersection(pantai_union)
+                    if geom.is_empty:
+                        continue
+                    if geom.geom_type == 'Point' and geom.within(batas_union):
+                        intersection_points.append(geom)
+                    elif geom.geom_type == 'MultiPoint':
+                        for pt in geom.geoms:
+                            if pt.within(batas_union):
+                                intersection_points.append(pt)
 
             sensors = load_csv_sensors(sensor_file)
 
