@@ -100,7 +100,7 @@ if sensor_mode == "Sensor di Darat":
             intersection_points = list(grid.geometry)
             sensors = load_csv_sensors(sensor_file)
 
-# ======================== SENSOR LAUT (REVISI CEPAT) ========================
+# ======================== SENSOR LAUT (DIPERCEPAT) ========================
 elif sensor_mode == "Sensor di Laut":
     batas_file = st.sidebar.file_uploader("🗺️ Unggah Batas Wilayah (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
     garis_file = st.sidebar.file_uploader("🌊 Unggah Garis Pantai (GeoJSON / ZIP)", type=["geojson", "json", "zip"])
@@ -117,16 +117,9 @@ elif sensor_mode == "Sensor di Laut":
             minx, miny, maxx, maxy = batas.total_bounds
             grid = generate_grid_points(minx, miny, maxx, maxy, grid_spacing)
 
-            points = [line.intersection(pantai_union) for line in grid.geometry if line.intersects(pantai_union)]
-            for geom in points:
-                if geom.is_empty:
-                    continue
-                elif geom.geom_type == 'Point' and geom.within(batas_union):
-                    intersection_points.append(geom)
-                elif geom.geom_type == 'MultiPoint':
-                    for pt in geom.geoms:
-                        if pt.within(batas_union):
-                            intersection_points.append(pt)
+            # 🔄 Filter cepat: titik grid dalam batas dan memotong pantai
+            grid = grid[grid.geometry.within(batas_union) & grid.geometry.intersects(pantai_union)]
+            intersection_points = list(grid.geometry)
 
             sensors = load_csv_sensors(sensor_file)
 
